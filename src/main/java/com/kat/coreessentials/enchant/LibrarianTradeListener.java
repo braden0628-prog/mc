@@ -19,7 +19,7 @@ public class LibrarianTradeListener implements Listener {
 
     @EventHandler
     public void onTradeAcquire(VillagerAcquireTradeEvent event) {
-        if (event.getEntity().getProfession() != Villager.Profession.LIBRARIAN) {
+        if (!(event.getEntity() instanceof Villager villager) || villager.getProfession() != Villager.Profession.LIBRARIAN) {
             return;
         }
         Enchantment veinMiner = VeinMiner.get();
@@ -42,6 +42,6 @@ public class LibrarianTradeListener implements Listener {
         recipe.addIngredient(new ItemStack(Material.EMERALD, emeraldCost));
         recipe.addIngredient(new ItemStack(Material.BOOK, 1));
 
-        event.setTrade(recipe);
+        event.setRecipe(recipe);
     }
 }

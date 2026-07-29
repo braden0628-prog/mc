@@ -41,7 +41,7 @@ public class CoreEssentialsBootstrap implements PluginBootstrap {
             );
 
             event.registry().register(
-                VeinMiner.KEY,
+                VeinMiner.TYPED_KEY,
                 builder -> builder
                     .description(Component.text("Vein Miner"))
                     .supportedItems(supportedTools)
