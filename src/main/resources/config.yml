@@ -4,6 +4,16 @@ tpr:
   # How many seconds before a pending /tpr request expires
   expire-seconds: 60
 
+teleport:
+  # Countdown (in seconds) before any teleport actually happens (/tpr, /home tp, /rtp, /spawn)
+  delay-seconds: 5
+
+combat:
+  # How many seconds a player stays "in combat" after taking damage from a
+  # mob or another player. While in combat: can't teleport, can't /home tp,
+  # can't accept teleport requests, and quitting kills them on the spot.
+  tag-seconds: 30
+
 homes:
   # Max named homes per player
   max-homes: 3
@@ -19,7 +29,5 @@ rtp:
   max-attempts: 20
 
 vein-miner:
-  # Blocks broken per enchant level (level 1 = 16, level 2 = 32, level 3 = 48)
-  blocks-per-level: 16
-  # Hard cap regardless of level, to protect server performance
-  max-blocks: 64
+  # How many extra blocks get chain-broken per use
+  blocks: 16

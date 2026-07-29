@@ -1,6 +1,10 @@
 package com.kat.coreessentials;
 
 import com.kat.coreessentials.chat.TeamChatListener;
+import com.kat.coreessentials.combat.CombatListener;
+import com.kat.coreessentials.combat.CombatManager;
+import com.kat.coreessentials.combat.TeleportDelayManager;
+import com.kat.coreessentials.combat.TeleportExecutor;
 import com.kat.coreessentials.commands.HomeCommand;
 import com.kat.coreessentials.commands.RtpCommand;
 import com.kat.coreessentials.commands.SetSpawnCommand;
@@ -25,6 +29,8 @@ public class CoreEssentials extends JavaPlugin {
     private TeamManager teamManager;
     private SpawnManager spawnManager;
     private TeleportRequestManager teleportRequestManager;
+    private CombatManager combatManager;
+    private TeleportDelayManager teleportDelayManager;
 
     @Override
     public void onEnable() {
@@ -34,21 +40,25 @@ public class CoreEssentials extends JavaPlugin {
         this.teamManager = new TeamManager(this);
         this.spawnManager = new SpawnManager(this);
         this.teleportRequestManager = new TeleportRequestManager(getConfig().getLong("tpr.expire-seconds", 60));
+        this.combatManager = new CombatManager(getConfig().getLong("combat.tag-seconds", 30));
+        this.teleportDelayManager = new TeleportDelayManager();
+        TeleportExecutor.delaySeconds = getConfig().getInt("teleport.delay-seconds", 5);
 
         registerPermissions();
 
         Bukkit.getPluginManager().registerEvents(new VeinMinerListener(this), this);
         Bukkit.getPluginManager().registerEvents(new LibrarianTradeListener(), this);
         Bukkit.getPluginManager().registerEvents(new TeamChatListener(teamManager), this);
+        Bukkit.getPluginManager().registerEvents(new CombatListener(combatManager, teleportDelayManager), this);
 
         this.getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, commands -> {
             commands.registrar().register(TprCommand.build(teleportRequestManager), "Send a teleport request to another player.");
-            commands.registrar().register(TprCommand.buildAccept(teleportRequestManager));
+            commands.registrar().register(TprCommand.buildAccept(this, teleportRequestManager, combatManager, teleportDelayManager));
             commands.registrar().register(TprCommand.buildDeny(teleportRequestManager));
-            commands.registrar().register(HomeCommand.build(homeManager), "Manage and teleport to your homes.");
+            commands.registrar().register(HomeCommand.build(this, homeManager, combatManager, teleportDelayManager), "Manage and teleport to your homes.");
             commands.registrar().register(TeamCommand.build(teamManager), "Manage your team.");
-            commands.registrar().register(RtpCommand.build(this), "Teleport to a random safe location.");
-            commands.registrar().register(SpawnCommand.build(spawnManager), "Teleport to spawn.");
+            commands.registrar().register(RtpCommand.build(this, combatManager, teleportDelayManager), "Teleport to a random safe location.");
+            commands.registrar().register(SpawnCommand.build(this, spawnManager, combatManager, teleportDelayManager), "Teleport to spawn.");
             commands.registrar().register(SetSpawnCommand.build(spawnManager), "Set the server spawn location (op only).");
         });
 

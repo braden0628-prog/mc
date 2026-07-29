@@ -1,5 +1,8 @@
 package com.kat.coreessentials.commands;
 
+import com.kat.coreessentials.combat.CombatManager;
+import com.kat.coreessentials.combat.TeleportDelayManager;
+import com.kat.coreessentials.combat.TeleportExecutor;
 import com.kat.coreessentials.util.SafeLocationFinder;
 import com.mojang.brigadier.Command;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
@@ -21,7 +24,7 @@ public final class RtpCommand {
     private RtpCommand() {
     }
 
-    public static LiteralCommandNode<CommandSourceStack> build(JavaPlugin plugin) {
+    public static LiteralCommandNode<CommandSourceStack> build(JavaPlugin plugin, CombatManager combat, TeleportDelayManager delays) {
         Map<UUID, Long> cooldowns = new ConcurrentHashMap<>();
 
         return Commands.literal("rtp")
@@ -56,11 +59,13 @@ public final class RtpCommand {
                     return Command.SINGLE_SUCCESS;
                 }
 
-                cooldowns.put(player.getUniqueId(), now);
-                player.teleportAsync(safe);
-                player.sendMessage(Component.text("Teleported!", NamedTextColor.GREEN));
+                boolean scheduled = TeleportExecutor.request(plugin, combat, delays, player, safe, "Teleported!");
+                if (scheduled) {
+                    cooldowns.put(player.getUniqueId(), now);
+                }
                 return Command.SINGLE_SUCCESS;
             })
             .build();
     }
 }
+

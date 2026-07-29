@@ -34,15 +34,13 @@ public class VeinMinerListener implements Listener {
             return;
         }
 
-        int level = VeinMiner.levelOn(tool);
-        if (level <= 0) {
+        boolean hasEnchant = VeinMiner.levelOn(tool) > 0;
+        if (!hasEnchant) {
             return;
         }
 
         FileConfiguration config = plugin.getConfig();
-        int perLevel = config.getInt("vein-miner.blocks-per-level", 16);
-        int hardCap = config.getInt("vein-miner.max-blocks", 64);
-        int maxBlocks = Math.min(perLevel * level, hardCap);
+        int maxBlocks = config.getInt("vein-miner.blocks", 16);
 
         Set<Block> connected = VeinMiner.findConnected(block, maxBlocks);
         if (connected.isEmpty()) {

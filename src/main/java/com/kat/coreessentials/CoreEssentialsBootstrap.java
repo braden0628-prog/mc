@@ -46,10 +46,10 @@ public class CoreEssentialsBootstrap implements PluginBootstrap {
                     .description(Component.text("Vein Miner"))
                     .supportedItems(supportedTools)
                     .anvilCost(4)
-                    .maxLevel(3)
+                    .maxLevel(1)
                     .weight(2)
-                    .minimumCost(EnchantmentRegistryEntry.EnchantmentCost.of(15, 9))
-                    .maximumCost(EnchantmentRegistryEntry.EnchantmentCost.of(45, 9))
+                    .minimumCost(EnchantmentRegistryEntry.EnchantmentCost.of(15, 0))
+                    .maximumCost(EnchantmentRegistryEntry.EnchantmentCost.of(45, 0))
                     .activeSlots(EquipmentSlotGroup.MAINHAND)
             );
         }));

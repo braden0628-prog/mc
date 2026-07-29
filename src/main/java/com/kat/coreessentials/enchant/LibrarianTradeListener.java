@@ -30,16 +30,13 @@ public class LibrarianTradeListener implements Listener {
             return;
         }
 
-        int level = 1 + ThreadLocalRandom.current().nextInt(veinMiner.getMaxLevel());
-        int emeraldCost = 8 + (level * 6);
-
         ItemStack book = new ItemStack(Material.ENCHANTED_BOOK);
         EnchantmentStorageMeta meta = (EnchantmentStorageMeta) book.getItemMeta();
-        meta.addStoredEnchant(veinMiner, level, true);
+        meta.addStoredEnchant(veinMiner, 1, true);
         book.setItemMeta(meta);
 
         MerchantRecipe recipe = new MerchantRecipe(book, 0, 8, true, 5, 0.05f);
-        recipe.addIngredient(new ItemStack(Material.EMERALD, emeraldCost));
+        recipe.addIngredient(new ItemStack(Material.EMERALD, 14));
         recipe.addIngredient(new ItemStack(Material.BOOK, 1));
 
         event.setRecipe(recipe);

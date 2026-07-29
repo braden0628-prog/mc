@@ -1,5 +1,8 @@
 package com.kat.coreessentials.commands;
 
+import com.kat.coreessentials.combat.CombatManager;
+import com.kat.coreessentials.combat.TeleportDelayManager;
+import com.kat.coreessentials.combat.TeleportExecutor;
 import com.kat.coreessentials.data.TeleportRequestManager;
 import com.mojang.brigadier.Command;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
@@ -12,6 +15,7 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.plugin.java.JavaPlugin;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 
 public final class TprCommand {
@@ -64,7 +68,8 @@ public final class TprCommand {
             .build();
     }
 
-    public static LiteralCommandNode<CommandSourceStack> buildAccept(TeleportRequestManager requests) {
+    public static LiteralCommandNode<CommandSourceStack> buildAccept(JavaPlugin plugin, TeleportRequestManager requests,
+                                                                      CombatManager combat, TeleportDelayManager delays) {
         return Commands.literal("tpraccept")
             .requires(source -> source.getSender().hasPermission("coreessentials.tpr"))
             .executes(ctx -> {
@@ -77,15 +82,31 @@ public final class TprCommand {
                     target.sendMessage(Component.text("You have no pending teleport request.", NamedTextColor.RED));
                     return Command.SINGLE_SUCCESS;
                 }
+
+                if (combat.isInCombat(target.getUniqueId())) {
+                    target.sendMessage(Component.text(
+                        "You can't accept teleport requests while in combat! (" + combat.secondsRemaining(target.getUniqueId()) + "s left)",
+                        NamedTextColor.RED
+                    ));
+                    return Command.SINGLE_SUCCESS;
+                }
+
                 Player requester = target.getServer().getPlayer(requesterId);
                 requests.clear(target.getUniqueId());
                 if (requester == null || !requester.isOnline()) {
                     target.sendMessage(Component.text("That player is no longer online.", NamedTextColor.RED));
                     return Command.SINGLE_SUCCESS;
                 }
-                requester.teleportAsync(target.getLocation());
-                requester.sendMessage(Component.text(target.getName() + " accepted your teleport request.", NamedTextColor.GREEN));
-                target.sendMessage(Component.text("Teleporting " + requester.getName() + " to you.", NamedTextColor.GREEN));
+
+                boolean scheduled = TeleportExecutor.request(
+                    plugin, combat, delays, requester, target.getLocation(),
+                    "Teleported to " + target.getName() + "."
+                );
+                if (scheduled) {
+                    target.sendMessage(Component.text("Accepted. Teleporting " + requester.getName() + " to you.", NamedTextColor.GREEN));
+                } else {
+                    target.sendMessage(Component.text(requester.getName() + " couldn't be teleported right now.", NamedTextColor.RED));
+                }
                 return Command.SINGLE_SUCCESS;
             })
             .build();
