@@ -1,0 +1,7 @@
+name: CoreEssentials
+version: '1.0.0'
+main: com.kat.coreessentials.CoreEssentials
+bootstrapper: com.kat.coreessentials.CoreEssentialsBootstrap
+description: TPR, homes, teams, RTP, spawn, and the Vein Miner enchant
+author: Kat
+api-version: '1.21'
