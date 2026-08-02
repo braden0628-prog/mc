@@ -15,7 +15,9 @@ import java.util.concurrent.ThreadLocalRandom;
 public class LibrarianTradeListener implements Listener {
 
     // Chance (0-1) that a librarian restock includes a Vein Miner book offer.
-    private static final double OFFER_CHANCE = 0.15;
+    // Deliberately rare - this is a strong enchant, so it should feel like a
+    // find rather than something you see on most librarians.
+    private static final double OFFER_CHANCE = 0.04;
 
     @EventHandler
     public void onTradeAcquire(VillagerAcquireTradeEvent event) {

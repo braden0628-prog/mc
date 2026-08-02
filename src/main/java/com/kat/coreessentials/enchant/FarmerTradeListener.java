@@ -11,7 +11,7 @@ import org.bukkit.inventory.MerchantRecipe;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * Gives farmers a chance to offer a "16 dirt -> 1 emerald" trade. Fires on
+ * Gives farmers a chance to offer a "1 emerald -> 16 dirt" trade. Fires on
  * VillagerAcquireTradeEvent, which covers both natural trade generation and
  * re-rolls done through the trade cycling GUI.
  */
@@ -28,8 +28,8 @@ public class FarmerTradeListener implements Listener {
             return;
         }
 
-        MerchantRecipe recipe = new MerchantRecipe(new ItemStack(Material.EMERALD, 1), 0, 16, true, 2, 0.05f);
-        recipe.addIngredient(new ItemStack(Material.DIRT, 16));
+        MerchantRecipe recipe = new MerchantRecipe(new ItemStack(Material.DIRT, 16), 0, 16, true, 2, 0.05f);
+        recipe.addIngredient(new ItemStack(Material.EMERALD, 1));
 
         event.setRecipe(recipe);
     }

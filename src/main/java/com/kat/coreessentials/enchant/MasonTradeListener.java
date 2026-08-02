@@ -11,7 +11,7 @@ import org.bukkit.inventory.MerchantRecipe;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * Gives masons a chance to offer a "1 emerald -> 4 stone" trade. Fires on
+ * Gives masons a chance to offer a "1 emerald -> 16 stone" trade. Fires on
  * VillagerAcquireTradeEvent, which covers both natural trade generation and
  * re-rolls done through the trade cycling GUI.
  */
@@ -28,7 +28,7 @@ public class MasonTradeListener implements Listener {
             return;
         }
 
-        MerchantRecipe recipe = new MerchantRecipe(new ItemStack(Material.STONE, 4), 0, 16, true, 2, 0.05f);
+        MerchantRecipe recipe = new MerchantRecipe(new ItemStack(Material.STONE, 16), 0, 16, true, 2, 0.05f);
         recipe.addIngredient(new ItemStack(Material.EMERALD, 1));
 
         event.setRecipe(recipe);

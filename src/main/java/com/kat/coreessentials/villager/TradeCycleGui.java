@@ -58,8 +58,7 @@ public class TradeCycleGui implements Listener {
     public void open(Player player, Villager villager) {
         TradeCycleHolder holder = new TradeCycleHolder(villager);
         Inventory inv = Bukkit.createInventory(holder, SIZE,
-            Component.text("Trades: ", NamedTextColor.DARK_GRAY)
-                .append(Component.text(professionName(villager), NamedTextColor.DARK_GREEN)));
+            Component.text(professionName(villager), NamedTextColor.DARK_GREEN));
         holder.setInventory(inv);
         render(inv, holder);
         player.openInventory(inv);
