@@ -25,6 +25,7 @@ public class TeamManager {
     private final Map<UUID, Invite> pendingInvites = new ConcurrentHashMap<>();
     private final Set<UUID> teamChatMode = ConcurrentHashMap.newKeySet();
     private static final long INVITE_EXPIRE_MILLIS = 60_000L;
+    private static final int MAX_MEMBERS = 4;
 
     // Curated so the color is always readable in chat - skips near-black/white.
     private static final NamedTextColor[] TEAM_COLORS = {
@@ -84,6 +85,22 @@ public class TeamManager {
         }
         NamedTextColor color = NamedTextColor.NAMES.value(name);
         return color == null ? NamedTextColor.WHITE : color;
+    }
+
+    public int maxMembers() {
+        return MAX_MEMBERS;
+    }
+
+    public boolean isFull(String key) {
+        return getMembers(key).size() >= MAX_MEMBERS;
+    }
+
+    /** All existing team keys (lowercase), for tab-completion etc. */
+    public Set<String> getAllTeamKeys() {
+        if (!yaml.contains("teams")) {
+            return java.util.Collections.emptySet();
+        }
+        return yaml.getConfigurationSection("teams").getKeys(false);
     }
 
     // --- mutations -----------------------------------------------------

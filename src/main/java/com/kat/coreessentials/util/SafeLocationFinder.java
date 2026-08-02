@@ -23,7 +23,15 @@ public final class SafeLocationFinder {
 
         for (int attempt = 0; attempt < maxAttempts; attempt++) {
             double angle = random.nextDouble() * Math.PI * 2;
-            double distance = minRadius + random.nextDouble() * (maxRadius - minRadius);
+            // Sampling radius uniformly biases points toward min-radius, since a
+            // thin ring near the center covers far less area than an equally
+            // thin ring farther out - the same number of points per unit radius
+            // means much higher density close in. Sampling uniformly by AREA
+            // instead (this formula) spreads results evenly across the whole
+            // annulus out to max-radius, instead of clustering near min-radius.
+            double minR2 = (double) minRadius * minRadius;
+            double maxR2 = (double) maxRadius * maxRadius;
+            double distance = Math.sqrt(minR2 + random.nextDouble() * (maxR2 - minR2));
             int x = center.getBlockX() + (int) (Math.cos(angle) * distance);
             int z = center.getBlockZ() + (int) (Math.sin(angle) * distance);
 

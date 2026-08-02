@@ -5,21 +5,19 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Tracks how long each player remains "in combat" after taking damage from a
- * mob or another player. While tagged, teleporting (and accepting teleport
- * requests) is blocked, and disconnecting kills the player on the spot.
+ * Tracks how long each player remains "in combat". While tagged, teleporting
+ * (and accepting teleport requests) is blocked, and disconnecting kills the
+ * player on the spot. Different sources (PvP vs PvE) apply different
+ * durations - tagging never shortens an existing, longer-remaining tag.
  */
 public class CombatManager {
 
     private final Map<UUID, Long> combatUntilMillis = new ConcurrentHashMap<>();
-    private final long tagDurationMillis;
 
-    public CombatManager(long tagDurationSeconds) {
-        this.tagDurationMillis = tagDurationSeconds * 1000L;
-    }
-
-    public void tag(UUID player) {
-        combatUntilMillis.put(player, System.currentTimeMillis() + tagDurationMillis);
+    /** Tags (or refreshes) a player's combat timer. Never shortens a longer existing tag. */
+    public void tag(UUID player, long durationSeconds) {
+        long candidateUntil = System.currentTimeMillis() + durationSeconds * 1000L;
+        combatUntilMillis.merge(player, candidateUntil, Math::max);
     }
 
     public boolean isInCombat(UUID player) {

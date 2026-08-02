@@ -17,10 +17,14 @@ public class CombatListener implements Listener {
 
     private final CombatManager combat;
     private final TeleportDelayManager delays;
+    private final long pvpSeconds;
+    private final long pveSeconds;
 
-    public CombatListener(CombatManager combat, TeleportDelayManager delays) {
+    public CombatListener(CombatManager combat, TeleportDelayManager delays, long pvpSeconds, long pveSeconds) {
         this.combat = combat;
         this.delays = delays;
+        this.pvpSeconds = pvpSeconds;
+        this.pveSeconds = pveSeconds;
     }
 
     @EventHandler(ignoreCancelled = true)
@@ -36,17 +40,26 @@ public class CombatListener implements Listener {
         if (source instanceof Projectile projectile && projectile.getShooter() instanceof Entity shooter) {
             source = shooter;
         }
-
-        // Combat is tagged for damage dealt by another player, or by a mob.
-        boolean isCombatSource = source instanceof Player || source instanceof Mob;
-        if (!isCombatSource || source.equals(victim)) {
+        if (source.equals(victim)) {
             return;
         }
 
-        combat.tag(victim.getUniqueId());
+        if (source instanceof Player attacker) {
+            // PvP: both sides get tagged, for the longer PvP duration.
+            combat.tag(victim.getUniqueId(), pvpSeconds);
+            combat.tag(attacker.getUniqueId(), pvpSeconds);
+            cancelPending(victim, "you took damage!");
+            cancelPending(attacker, "you entered combat!");
+        } else if (source instanceof Mob) {
+            // PvE: only the player taking the hit is tagged, for the shorter PvE duration.
+            combat.tag(victim.getUniqueId(), pveSeconds);
+            cancelPending(victim, "you took damage!");
+        }
+    }
 
-        if (delays.cancel(victim.getUniqueId())) {
-            victim.sendMessage(Component.text("Teleport cancelled - you took damage!", NamedTextColor.RED));
+    private void cancelPending(Player player, String reason) {
+        if (delays.cancel(player.getUniqueId())) {
+            player.sendMessage(Component.text("Teleport cancelled - " + reason, NamedTextColor.RED));
         }
     }
 

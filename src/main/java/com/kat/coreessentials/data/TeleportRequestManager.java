@@ -5,13 +5,16 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Tracks pending /tpr requests. Keyed by the TARGET's UUID (the player who
- * received the request), value is the REQUESTER's UUID. Only the most
- * recent incoming request per target is kept.
+ * Tracks pending teleport requests - both /tpr ("come to me" style, where
+ * the requester teleports to the target once accepted) and /tph ("teleport
+ * here" style, where the target teleports to the requester once accepted).
+ * Keyed by the TARGET's UUID (the player who received the request); only
+ * the most recent incoming request per target is kept.
  */
 public class TeleportRequestManager {
 
-    public record Request(UUID requester, long expiresAtMillis) {
+    /** targetMovesToRequester: true for /tph, false for /tpr. */
+    public record Request(UUID requester, boolean targetMovesToRequester, long expiresAtMillis) {
     }
 
     private final Map<UUID, Request> pending = new ConcurrentHashMap<>();
@@ -21,12 +24,12 @@ public class TeleportRequestManager {
         this.expireMillis = expireSeconds * 1000L;
     }
 
-    public void addRequest(UUID target, UUID requester) {
-        pending.put(target, new Request(requester, System.currentTimeMillis() + expireMillis));
+    public void addRequest(UUID target, UUID requester, boolean targetMovesToRequester) {
+        pending.put(target, new Request(requester, targetMovesToRequester, System.currentTimeMillis() + expireMillis));
     }
 
-    /** Returns the requester's UUID if there's a valid, unexpired request for this target. */
-    public UUID getValidRequester(UUID target) {
+    /** Returns the pending request for this target if valid and unexpired, otherwise null. */
+    public Request getValidRequest(UUID target) {
         Request request = pending.get(target);
         if (request == null) {
             return null;
@@ -35,7 +38,7 @@ public class TeleportRequestManager {
             pending.remove(target);
             return null;
         }
-        return request.requester();
+        return request;
     }
 
     public void clear(UUID target) {

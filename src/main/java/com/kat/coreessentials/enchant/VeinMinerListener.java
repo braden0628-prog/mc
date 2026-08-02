@@ -40,7 +40,7 @@ public class VeinMinerListener implements Listener {
         }
 
         FileConfiguration config = plugin.getConfig();
-        int maxBlocks = config.getInt("vein-miner.blocks", 16);
+        int maxBlocks = config.getInt("vein-miner.blocks", 192);
 
         Set<Block> connected = VeinMiner.findConnected(block, maxBlocks);
         if (connected.isEmpty()) {

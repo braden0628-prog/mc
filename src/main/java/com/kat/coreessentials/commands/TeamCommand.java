@@ -36,6 +36,12 @@ public final class TeamCommand {
                         String name = StringArgumentType.getString(ctx, "name");
                         if (teams.createTeam(player.getUniqueId(), name)) {
                             player.sendMessage(Component.text("Team '" + name + "' created.", NamedTextColor.GREEN));
+                            NamedTextColor color = teams.getColor(name.toLowerCase());
+                            Bukkit.broadcast(
+                                Component.text(player.getName() + " has created team ", NamedTextColor.YELLOW)
+                                    .append(Component.text(name, color))
+                                    .append(Component.text("!", NamedTextColor.YELLOW))
+                            );
                         } else {
                             player.sendMessage(Component.text("That team name is taken, or you're already in a team.", NamedTextColor.RED));
                         }
@@ -52,6 +58,14 @@ public final class TeamCommand {
                         String teamKey = teams.getTeamOf(player.getUniqueId());
                         if (teamKey == null) {
                             player.sendMessage(Component.text("You're not in a team.", NamedTextColor.RED));
+                            return Command.SINGLE_SUCCESS;
+                        }
+
+                        if (teams.isFull(teamKey)) {
+                            player.sendMessage(Component.text(
+                                "Your team is full (" + teams.getMembers(teamKey).size() + "/" + teams.maxMembers() + ").",
+                                NamedTextColor.RED
+                            ));
                             return Command.SINGLE_SUCCESS;
                         }
 
@@ -91,11 +105,26 @@ public final class TeamCommand {
                 .executes(ctx -> {
                     Player player = asPlayer(ctx.getSource().getSender());
                     if (player == null) return Command.SINGLE_SUCCESS;
+
+                    var pending = teams.getValidInvite(player.getUniqueId());
+                    if (pending != null && teams.isFull(pending.teamKey())) {
+                        teams.clearInvite(player.getUniqueId());
+                        player.sendMessage(Component.text("That team is now full and can't accept new members.", NamedTextColor.RED));
+                        return Command.SINGLE_SUCCESS;
+                    }
+
                     String teamKey = teams.acceptInvite(player.getUniqueId());
                     if (teamKey == null) {
                         player.sendMessage(Component.text("You have no pending team invite.", NamedTextColor.RED));
                     } else {
-                        player.sendMessage(Component.text("Joined team " + teams.getDisplayName(teamKey) + "!", NamedTextColor.GREEN));
+                        String display = teams.getDisplayName(teamKey);
+                        NamedTextColor color = teams.getColor(teamKey);
+                        player.sendMessage(Component.text("Joined team " + display + "!", NamedTextColor.GREEN));
+                        Bukkit.broadcast(
+                            Component.text(player.getName() + " has joined ", NamedTextColor.YELLOW)
+                                .append(Component.text(display, color))
+                                .append(Component.text("!", NamedTextColor.YELLOW))
+                        );
                     }
                     return Command.SINGLE_SUCCESS;
                 })
@@ -113,8 +142,21 @@ public final class TeamCommand {
                 .executes(ctx -> {
                     Player player = asPlayer(ctx.getSource().getSender());
                     if (player == null) return Command.SINGLE_SUCCESS;
+
+                    String teamKey = teams.getTeamOf(player.getUniqueId());
+                    List<UUID> remaining = teamKey == null ? List.of() :
+                        teams.getMembers(teamKey).stream()
+                            .filter(id -> !id.equals(player.getUniqueId()))
+                            .collect(Collectors.toList());
+
                     if (teams.leaveTeam(player.getUniqueId())) {
                         player.sendMessage(Component.text("You left your team.", NamedTextColor.GREEN));
+                        for (UUID memberId : remaining) {
+                            Player member = Bukkit.getPlayer(memberId);
+                            if (member != null) {
+                                member.sendMessage(Component.text(player.getName() + " has left the team.", NamedTextColor.YELLOW));
+                            }
+                        }
                     } else {
                         player.sendMessage(Component.text("You're not in a team.", NamedTextColor.RED));
                     }
@@ -125,8 +167,18 @@ public final class TeamCommand {
                 .executes(ctx -> {
                     Player player = asPlayer(ctx.getSource().getSender());
                     if (player == null) return Command.SINGLE_SUCCESS;
+
+                    String teamKey = teams.getTeamOf(player.getUniqueId());
+                    String display = teamKey == null ? null : teams.getDisplayName(teamKey);
+                    NamedTextColor color = teamKey == null ? null : teams.getColor(teamKey);
+
                     if (teams.disbandTeam(player.getUniqueId())) {
                         player.sendMessage(Component.text("Team disbanded.", NamedTextColor.GREEN));
+                        Bukkit.broadcast(
+                            Component.text(player.getName() + " has disbanded ", NamedTextColor.YELLOW)
+                                .append(Component.text(display, color))
+                                .append(Component.text(".", NamedTextColor.YELLOW))
+                        );
                     } else {
                         player.sendMessage(Component.text("You must be the team owner to disband it.", NamedTextColor.RED));
                     }
@@ -140,9 +192,22 @@ public final class TeamCommand {
                         if (player == null) return Command.SINGLE_SUCCESS;
                         PlayerSelectorArgumentResolver resolver = ctx.getArgument("target", PlayerSelectorArgumentResolver.class);
                         Player target = resolver.resolve(ctx.getSource()).getFirst();
+
+                        String teamKey = teams.getTeamOf(player.getUniqueId());
+                        List<UUID> others = teamKey == null ? List.of() :
+                            teams.getMembers(teamKey).stream()
+                                .filter(id -> !id.equals(player.getUniqueId()) && !id.equals(target.getUniqueId()))
+                                .collect(Collectors.toList());
+
                         if (teams.kick(player.getUniqueId(), target.getUniqueId())) {
                             player.sendMessage(Component.text("Kicked " + target.getName() + " from the team.", NamedTextColor.GREEN));
                             target.sendMessage(Component.text("You were kicked from your team.", NamedTextColor.RED));
+                            for (UUID memberId : others) {
+                                Player member = Bukkit.getPlayer(memberId);
+                                if (member != null) {
+                                    member.sendMessage(Component.text(target.getName() + " was kicked from the team.", NamedTextColor.YELLOW));
+                                }
+                            }
                         } else {
                             player.sendMessage(Component.text("You must be the team owner, and they must be a member.", NamedTextColor.RED));
                         }
@@ -198,9 +263,11 @@ public final class TeamCommand {
                         }
                         String message = StringArgumentType.getString(ctx, "message");
                         NamedTextColor color = teams.getColor(teamKey);
-                        Component formatted = Component.text("[" + teams.getDisplayName(teamKey) + "] ", color)
+                        Component formatted = Component.text("[", NamedTextColor.WHITE)
+                            .append(Component.text(teams.getDisplayName(teamKey), color))
+                            .append(Component.text("] ", NamedTextColor.WHITE))
                             .append(Component.text(player.getName() + ": ", NamedTextColor.WHITE))
-                            .append(Component.text(message, NamedTextColor.GRAY));
+                            .append(Component.text(message, NamedTextColor.WHITE));
 
                         for (UUID memberId : teams.getMembers(teamKey)) {
                             Player member = Bukkit.getPlayer(memberId);

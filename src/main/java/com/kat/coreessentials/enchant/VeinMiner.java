@@ -13,9 +13,11 @@ import org.bukkit.inventory.meta.Damageable;
 import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Deque;
 import java.util.EnumSet;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -53,6 +55,33 @@ public final class VeinMiner {
     );
 
     private VeinMiner() {
+    }
+
+    private static final int[][] FACE_OFFSETS = {
+        {1, 0, 0}, {-1, 0, 0},
+        {0, 1, 0}, {0, -1, 0},
+        {0, 0, 1}, {0, 0, -1}
+    };
+
+    // All 26 neighbors of a 3x3x3 cube (face + edge + corner) - lets vein
+    // miner chain logs that only touch diagonally, which some vanilla tree
+    // shapes do (jungle trees, azalea trees, etc). Ore veins stay on the
+    // original 6-directional check.
+    private static final int[][] DIAGONAL_OFFSETS = buildDiagonalOffsets();
+
+    private static int[][] buildDiagonalOffsets() {
+        List<int[]> offsets = new ArrayList<>();
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dy = -1; dy <= 1; dy++) {
+                for (int dz = -1; dz <= 1; dz++) {
+                    if (dx == 0 && dy == 0 && dz == 0) {
+                        continue;
+                    }
+                    offsets.add(new int[]{dx, dy, dz});
+                }
+            }
+        }
+        return offsets.toArray(new int[0][]);
     }
 
     public static boolean isVeinBlock(Material material) {
@@ -101,7 +130,9 @@ public final class VeinMiner {
 
     /**
      * Finds every block connected to {@code origin} that shares its Material,
-     * via a 6-directional flood fill, capped at {@code maxBlocks}.
+     * capped at {@code maxBlocks}. Ore uses a 6-directional (face-adjacent)
+     * flood fill; logs use all 26 neighbors of a 3x3x3 cube, since some
+     * vanilla tree shapes place logs that only touch diagonally.
      * The origin block itself is NOT included in the result - it is broken
      * normally by the game before this runs.
      */
@@ -113,11 +144,7 @@ public final class VeinMiner {
         visited.add(origin);
         queue.add(origin);
 
-        int[][] offsets = {
-            {1, 0, 0}, {-1, 0, 0},
-            {0, 1, 0}, {0, -1, 0},
-            {0, 0, 1}, {0, 0, -1}
-        };
+        int[][] offsets = LOG_BLOCKS.contains(target) ? DIAGONAL_OFFSETS : FACE_OFFSETS;
 
         while (!queue.isEmpty() && result.size() < maxBlocks) {
             Block current = queue.poll();

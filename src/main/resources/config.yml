@@ -9,10 +9,14 @@ teleport:
   delay-seconds: 5
 
 combat:
-  # How many seconds a player stays "in combat" after taking damage from a
-  # mob or another player. While in combat: can't teleport, can't /home tp,
-  # can't accept teleport requests, and quitting kills them on the spot.
-  tag-seconds: 30
+  # How many seconds a player stays "in combat" after being hit by ANOTHER
+  # PLAYER. Both the attacker and the victim get tagged.
+  pvp-seconds: 30
+  # How many seconds a player stays "in combat" after being hit by a MOB.
+  # Only the player taking the hit gets tagged.
+  pve-seconds: 15
+  # While in combat: can't teleport, can't /home tp, can't accept teleport
+  # requests, and quitting kills you on the spot.
 
 homes:
   # Max named homes per player
@@ -30,4 +34,55 @@ rtp:
 
 vein-miner:
   # How many extra blocks get chain-broken per use
-  blocks: 16
+  blocks: 192
+
+xray:
+  # Score at which a player triggers a staff alert. Diamond/ancient
+  # debris/emerald add 10-12 points per block; regular digging (stone,
+  # deepslate, etc.) slowly drains 0.5 per block. A legit miner digging
+  # normally almost never reaches this; someone beelining straight to ore
+  # with little digging in between will.
+  alert-threshold: 20.0
+  # Minimum minutes between repeat alerts for the same player, so staff
+  # aren't spammed while watching someone.
+  alert-cooldown-minutes: 5
+
+leaf-decay:
+  enabled: true
+  # How far (in blocks) a leaf can be from any log and still count as
+  # "supported" - matches vanilla's own rule.
+  sustain-radius: 4
+  # Random delay range (in ticks, 20 = 1 second) before an unsupported leaf
+  # actually decays, staggered per leaf for a cascading look instead of the
+  # whole canopy vanishing in the same instant.
+  min-delay-ticks: 1
+  max-delay-ticks: 6
+
+farmload:
+  enabled: true
+  # How often (in seconds) registered zones get a growth pass. Zones with
+  # a player already close enough to be ticking naturally are skipped -
+  # vanilla already handles growth correctly for those.
+  interval-seconds: 15
+  # Chance each unripe crop has of advancing one growth stage per pass.
+  grow-chance: 0.15
+  # How close (in blocks) a player has to be to a zone before it's
+  # considered "handled naturally" and skipped by this system.
+  player-nearby-radius: 128
+
+trade-cycling:
+  enabled: true
+  # Shift + right-click a villager to open the cycling GUI. Re-rolling works
+  # by resetting the villager's profession, which makes vanilla regenerate a
+  # genuine trade list - so prices and enchantment odds are the real ones.
+  # Only works before a villager has been traded with, same as vanilla.
+  #
+  # A "good" roll (Mending, Sharpness V, Efficiency V, Protection IV,
+  # Unbreaking III, Fortune III, Looting III, Fire Aspect II, Vein Miner)
+  # at or under this emerald price counts as a GREAT roll and gets the
+  # bigger celebration.
+  good-price-threshold: 20
+  # Ask for a second click before re-rolling away a good trade.
+  warn-before-rerolling-good: true
+  # Sounds, particles, and titles on a good/great roll.
+  effects: true
